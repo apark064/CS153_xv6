@@ -35,6 +35,18 @@ sys_wait(void)
 }
 
 int
+sys_waitpid(void)
+{
+	int *status;
+	if(argptr(1, (void*)&status, sizeof(*status)) < 0){
+		return -1;
+	}
+	int pid, options;
+	// TO DO : how to get parameters
+	return waitpid(pid, status, options);
+}
+
+int
 sys_kill(void)
 {
   int pid;

@@ -538,3 +538,40 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+int waitpid(int pid, int *status, int options){
+	struct proc *p;
+	int havekids;
+	struct proc *curproc = myproc();
+
+	acquire(&ptable.lock);
+	for(;;){		
+		havekids = 0;
+		for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+			if(p->parent != curproc)
+				continue;
+			havekids = 1;
+			if(p->state == ZOMBIE && pid == p->pid){ // added second condition
+				kfree(p->kstack);
+				p->kstack = 0;
+				freevm(p->pgdir);
+				p->pid = 0;
+				p->parent = 0;
+				p->name[0] = 0;
+				p->killed = 0;
+				p->state = UNUSED;
+
+				if(status)
+					*status = p->exit_status;
+				release(&ptable.lock);
+				return pid;
+			}
+		}
+		if(!havekids || curproc->killed){
+			release(&ptable.lock);
+			return -1;
+		}
+
+		sleep(curproc, &ptable.lock);
+	}
+}
