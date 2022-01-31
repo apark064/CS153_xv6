@@ -6,6 +6,7 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
+#include "stdio.h"
 
 struct {
   struct spinlock lock;
@@ -577,7 +578,7 @@ int waitpid(int pid, int *status, int options){
 }
 
 void debug(void){
-	printf("begin\ndebugging\n")
+	printf("begin\ndebugging\n");
 	struct proc* p;
 	acquire(&ptable.lock);
 	p = ptable.proc;
