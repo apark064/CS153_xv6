@@ -575,3 +575,16 @@ int waitpid(int pid, int *status, int options){
 		sleep(curproc, &ptable.lock);
 	}
 }
+
+void debug(void){
+	printf("begin\ndebugging\n")
+	struct proc* p;
+	acquire(&ptable.lock);
+	p = ptable.proc;
+	printf("pid: %f\n", p->pid);
+	printf("parent: %f\n", p->parent);
+	printf("killed: %f\n", p->killed);
+	printf("name: %s\n", p->name);
+	printf("state: %f\n", p->state);
+	printf("end\n");	
+}

@@ -117,3 +117,9 @@ sys_add(void)
   int b = 2020;
   return a+b;
 }
+
+int
+sys_debug(void)
+{
+	debug();
+}
