@@ -262,9 +262,9 @@ exit(int status)
     }
   }
 
+  curproc->exit_status = status;
   // Jump into the scheduler, never to return.
   curproc->state = ZOMBIE;
-  curproc->exit_status = status;
   sched();
   panic("zombie exit");
 }
@@ -297,11 +297,12 @@ wait(int *status)
         p->name[0] = 0;
         p->killed = 0;
         p->state = UNUSED;
-	
+
 	if(status){
 	  *status = p->exit_status;
 	}
 
+        //p->exit_status = 0;
         release(&ptable.lock);
         return pid;
       }
@@ -315,6 +316,49 @@ wait(int *status)
 
     // Wait for children to exit.  (See wakeup1 call in proc_exit.)
     sleep(curproc, &ptable.lock);  //DOC: wait-sleep
+  }
+}
+
+int 
+waitpid(int pid, int *status, int options)
+{
+  struct proc *p;
+  int found_pid;
+  struct proc *curproc = myproc();
+  
+  acquire(&ptable.lock);
+  for(;;){		
+    found_pid = 0;
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->pid != pid)
+        continue;
+      found_pid = 1;
+      if(p->state == ZOMBIE){ 
+        kfree(p->kstack);
+        p->kstack = 0;
+        freevm(p->pgdir);
+        p->pid = 0;
+        p->parent = 0;
+        p->name[0] = 0;
+        p->killed = 0;
+        p->state = UNUSED;
+
+        if(status){
+          *status = p->exit_status;
+        }
+
+        p->exit_status = 0;
+        release(&ptable.lock);
+        return pid;
+      }
+    }
+    
+    if(!found_pid || curproc->killed){
+      release(&ptable.lock);
+      return -1;
+    }
+
+    sleep(curproc, &ptable.lock);
   }
 }
 
@@ -540,52 +584,15 @@ procdump(void)
   }
 }
 
-int waitpid(int pid, int *status, int options){
-	struct proc *p;
-	int havekids;
-	struct proc *curproc = myproc();
-
-	acquire(&ptable.lock);
-	for(;;){		
-		havekids = 0;
-		for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-			if(p->parent != curproc)
-				continue;
-			havekids = 1;
-			if(p->state == ZOMBIE && pid == p->pid){ // added second condition
-				kfree(p->kstack);
-				p->kstack = 0;
-				freevm(p->pgdir);
-				p->pid = 0;
-				p->parent = 0;
-				p->name[0] = 0;
-				p->killed = 0;
-				p->state = UNUSED;
-
-				if(status)
-					*status = p->exit_status;
-				release(&ptable.lock);
-				return pid;
-			}
-		}
-		if(!havekids || curproc->killed){
-			release(&ptable.lock);
-			return -1;
-		}
-
-		sleep(curproc, &ptable.lock);
-	}
-}
-
-void debug(void){
-	printf("begin\ndebugging\n");
-	struct proc* p;
-	acquire(&ptable.lock);
-	p = ptable.proc;
-	printf("pid: %f\n", p->pid);
-	printf("parent: %f\n", p->parent);
-	printf("killed: %f\n", p->killed);
-	printf("name: %s\n", p->name);
-	printf("state: %f\n", p->state);
-	printf("end\n");	
+void 
+debug(void)
+{
+//  exit(0);
+  struct proc *curproc = myproc();
+  cprintf("DEBUG INFO: \n");
+  cprintf("pid:    %d\n", curproc->pid);
+  cprintf("parent: %d\n", curproc->parent);
+  cprintf("killed: %d\n", curproc->killed);
+  cprintf("name:   %s\n", curproc->name);
+  cprintf("state:  %d\n", curproc->state);
 }

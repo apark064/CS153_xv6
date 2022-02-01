@@ -84,7 +84,7 @@ runcmd(struct cmd *cmd)
     close(rcmd->fd);
     if(open(rcmd->file, rcmd->mode) < 0){
       printf(2, "open %s failed\n", rcmd->file);
-      exit(1);
+      exit(0);
     }
     runcmd(rcmd->cmd);
     break;
