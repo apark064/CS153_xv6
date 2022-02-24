@@ -113,6 +113,13 @@ found:
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
 
+  //set default priority
+  p->priority = 10;
+  //set start time of process
+  p->time_start = ticks;
+  //set timeslices of process
+  p->timeslices = 0;
+
   return p;
 }
 
@@ -248,6 +255,13 @@ exit(int status)
   end_op();
   curproc->cwd = 0;
 
+  //set end time of process
+  curproc->time_end = ticks;
+  //print the turnaround time of the process
+  cprintf(" \n \t Process turnaround time %d \n ", curproc->time_end - curproc->time_start);
+  cprintf(" \n \t Process length time %d \n ", curproc->timeslices);
+
+
   acquire(&ptable.lock);
 
   // Parent might be sleeping in wait().
@@ -261,8 +275,14 @@ exit(int status)
         wakeup1(initproc);
     }
   }
-
+  
+  //set exit status of process
   curproc->exit_status = status;
+
+  //set end time of process
+  //p->time_end = ticks;
+  //cprintf(" \n begin %d end %d \n ", p->time_start, p->time_end);
+
   // Jump into the scheduler, never to return.
   curproc->state = ZOMBIE;
   sched();
@@ -362,6 +382,34 @@ waitpid(int pid, int *status, int options)
   }
 }
 
+void
+setpriority(int prior_lvl)
+{
+  struct proc *p = myproc();
+  
+  if(prior_lvl >= 0 && prior_lvl <= 31){
+    p->priority = prior_lvl;
+  }
+}
+
+void
+donatepriority(int pid)
+{
+  struct proc *curproc = myproc();
+  struct proc *p;
+  int donor_priority;
+
+  acquire(&ptable.lock);
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->pid == pid){
+       donor_priority = curproc->priority;
+       curproc->priority = p->priority;
+       p->priority = donor_priority;
+    }
+  }
+  release(&ptable.lock);
+}
+
 //PAGEBREAK: 42
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
@@ -380,19 +428,62 @@ scheduler(void)
   for(;;){
     // Enable interrupts on this processor.
     sti();
-
+    
+    //0 is highest - 31 is lowest priority
+    int highest_priority = 31;
+    //struct proc *high_priority = 0;
+    
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
         continue;
+      /*
+      struct proc *high_priority = 0;
+      struct proc *p1 = 0;
+
+      high_priority = p;
+
+      for(p1 = ptable.proc; p1 < &ptable.proc[NPROC]; p1++){
+        if((p1->state == RUNNABLE) && (high_priority->priority > p1->priority))
+          high_priority = p1;
+        } else {
+          p1->priority--;
+        }
+        
+        if(high_priority != 0)
+          p = high_priority;
+      
+       */
+      if(p->priority < highest_priority){
+        highest_priority = p->priority;
+      }
+    }
+
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->state != RUNNABLE)
+        continue;
+
+      //increase priority of other processes
+      if(p->priority != highest_priority){
+        if(p->priority > 0){
+          p->priority--;
+        }
+        continue;
+      }
 
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
+      
+//      if(p != 0){
       c->proc = p;
       switchuvm(p);
       p->state = RUNNING;
+
+      //decrease the priority of running process
+      p->priority++;
+      p->timeslices++;
 
       swtch(&(c->scheduler), p->context);
       switchkvm();
@@ -400,6 +491,7 @@ scheduler(void)
       // Process is done running for now.
       // It should have changed its p->state before coming back.
       c->proc = 0;
+//      }
     }
     release(&ptable.lock);
 

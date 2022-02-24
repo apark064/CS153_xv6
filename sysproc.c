@@ -128,6 +128,24 @@ sys_add(void)
   return a+b;
 }
 
+int
+sys_setpriority(void)
+{
+  int priority;
+  if(argint(0, &priority) < 0){
+    return -1;
+  }
+  setpriority(priority);
+  return 0;
+}
+
+int
+sys_getpriority(void)
+{
+  //getpriority();
+  return myproc()->priority;
+}
+
 int //lab1 task 4 edit
 sys_debug(void)
 {  

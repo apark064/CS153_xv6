@@ -5,7 +5,7 @@ struct rtcdate;
 int fork(void);
 int exit(int status) __attribute__((noreturn));
 int wait(int *status);
-int waitpid(int pid, int* status, int options);
+int waitpid(int pid, int* status, int options); //lab 1 added syscall
 int pipe(int*);
 int write(int, const void*, int);
 int read(int, void*, int);
@@ -26,6 +26,8 @@ int sleep(int);
 int uptime(void);
 int add(void);
 void debug(void);
+void setpriority(int); //lab 2 added syscall
+int getpriority(void); //lab 2 added syscall
 // ulib.c
 int stat(const char*, struct stat*);
 char* strcpy(char*, const char*);
