@@ -1,19 +1,20 @@
 #include "types.h"
 #include "user.h"
+
 int PScheduler(void);
-int aging(void);
+int donate(void);
 int agetest(void);
+int testdefault(void);
 
 int main(int argc, char *argv[])
 {
-	
-	int PScheduler(void);
 
   printf(1, "\n This program tests the correctness of your lab#2\n");
   
-	PScheduler();
-//	aging();
-//	agetest();
+//	PScheduler();
+//	donate();
+	agetest();
+//       	testdefault();
 	return 0;
 }
   
@@ -61,31 +62,39 @@ int PScheduler(void){
     return 0;
 }
 
-int aging(void){
+int donate(void){
     int pid;
-    int prioritylvl;
-    int i, j, k;
+    int j, k;
 
     pid = fork();
     
     if(pid == 0){
         //child process has lower priority but will have higher priority with aging
-        prioritylvl = 10;
-        setpriority(10);
+        setpriority(20);
     } else {
         //parent process has higher priority but will have lower priority with aging
-        prioritylvl = 9;
-        setpriority(9);
+        setpriority(5);
     }
 
-    for(i = 0; i < 1000; i++){
-        for(j = 0; j < 10000; j++){
-            for(k = 0; k < 3; k++){
-                asm("nop");
-            }
+    printf(1, "\n 1: process %d with priority %d \n",getpid(), getpriority());
+
+    if(pid > 0){
+        //paremt process donates priority to child
+        donatepriority(pid);
+        printf(1, "\n \t parent process donated priority of %d \n", getpriority());
+    }
+
+    printf(1, "\n 2: new process priority %d with priority %d \n",getpid(), getpriority());
+
+    for (j=0;j<50000;j++) {
+        for(k=0;k<1000;k++) {
+            asm("nop");
         }
     }
-    printf(1, "\n process %d with priority %d has finished! \n",getpid(), prioritylvl);
+
+    printf(1, "\n 3: process %d with priority %d has finished! \n",getpid(), getpriority());
+
+    wait(0);
     exit(0);
 
     return 0;      
@@ -135,6 +144,16 @@ int agetest(void){
         }
         printf(1,"\n if processes with highest priority finished first then its correct \n");
     }
+    exit(0);
+    return 0;
+}
+
+
+int testdefault(void){
+    int pid;
+    pid = fork();
+    printf(1, "\n current process %d priority %d \n ", getpid(), getpriority());
+    if(pid > 0) wait(0);
     exit(0);
     return 0;
 }

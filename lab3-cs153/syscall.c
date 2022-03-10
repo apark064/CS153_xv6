@@ -101,20 +101,16 @@ extern int sys_sbrk(void);
 extern int sys_sleep(void);
 extern int sys_unlink(void);
 extern int sys_wait(void);
-extern int sys_waitpid(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
-extern int sys_add(void);
-extern int sys_debug(void);
-extern int sys_setpriority(void);
-extern int sys_getpriority(void);
-extern int sys_donatepriority(void);
+
+extern int sys_shm_open(void);
+extern int sys_shm_close(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
 [SYS_exit]    sys_exit,
 [SYS_wait]    sys_wait,
-[SYS_waitpid] sys_waitpid,
 [SYS_pipe]    sys_pipe,
 [SYS_read]    sys_read,
 [SYS_kill]    sys_kill,
@@ -133,11 +129,8 @@ static int (*syscalls[])(void) = {
 [SYS_link]    sys_link,
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
-[SYS_add]     sys_add,
-[SYS_debug]   sys_debug,
-[SYS_setpriority] sys_setpriority,
-[SYS_getpriority] sys_getpriority,
-[SYS_donatepriority] sys_donatepriority,
+[SYS_shm_open] sys_shm_open,
+[SYS_shm_close] sys_shm_close
 };
 
 void

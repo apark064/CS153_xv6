@@ -28,6 +28,7 @@ int add(void);
 void debug(void);
 void setpriority(int); //lab 2 added syscall
 int getpriority(void); //lab 2 added syscall
+void donatepriority(int); //lab 2 added syscall
 // ulib.c
 int stat(const char*, struct stat*);
 char* strcpy(char*, const char*);
